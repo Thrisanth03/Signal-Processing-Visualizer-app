@@ -8,3 +8,7 @@ datetime
 matplotlib
 script
 reportlab
+SimpleDocTemplate
+Parageaph
+Spacer
+getSampleStyleSheet
