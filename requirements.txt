@@ -6,3 +6,5 @@ scipy
 fpdf
 datetime
 matplotlib
+script
+reportlab
