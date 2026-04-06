@@ -1,125 +1,122 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
-import datetime
+import random
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
 
-st.set_page_config(page_title="Signal Processing Lab", layout="wide")
+st.set_page_config(page_title="Signal Lab Pro", layout="wide")
 
-st.title("📡 Signal Processing Virtual Lab")
+# ---------------- THEME TOGGLE ----------------
+theme = st.sidebar.toggle("🌙 Dark Mode")
 
-# Sidebar navigation
-section = st.sidebar.radio("Navigate", 
-                          ["Aim", "Theory", "Experiment", "Quiz", "Feedback"])
+if theme:
+    st.markdown("""
+        <style>
+        body {background-color: #0e1117; color: white;}
+        </style>
+    """, unsafe_allow_html=True)
+
+# ---------------- TITLE ----------------
+st.markdown("<h1 style='text-align:center;'>📡 Signal Processing Lab Pro</h1>", unsafe_allow_html=True)
+
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["🎯 Aim", "📖 Theory", "🧪 Experiment", "🧠 Quiz", "📄 Report"])
 
 # ---------------- AIM ----------------
-if section == "Aim":
-    st.header("🎯 Aim")
+with tab1:
+    st.subheader("Aim")
     st.write("""
-    To study and analyze the behavior of signals using filtering techniques 
-    and understand how noise can be reduced using a low-pass filter.
+    To analyze signals and reduce noise using filtering techniques.
+    Understand how signal smoothing improves performance.
     """)
 
 # ---------------- THEORY ----------------
-elif section == "Theory":
-    st.header("📖 Theory")
+with tab2:
+    st.subheader("Detailed Theory")
+
     st.write("""
-    Signal processing is the analysis, interpretation, and manipulation of signals. 
-    A low-pass filter allows signals with frequencies lower than a selected cutoff 
-    frequency to pass and attenuates frequencies higher than the cutoff frequency.
-    
-    In digital signal processing, filtering can be implemented using convolution. 
-    This experiment demonstrates how noise can be reduced from a signal using a 
-    simple moving average filter.
+    Signal Processing is a branch of electrical engineering that focuses on analyzing,
+    modifying, and synthesizing signals such as sound, images, and sensor data.
+
+    A **Low-Pass Filter (LPF)** allows low-frequency signals to pass while attenuating 
+    high-frequency components. It is widely used in communication systems and noise reduction.
+
+    ### Key Concepts:
+    - Sampling
+    - Convolution
+    - Frequency response
+    - Noise reduction
+
+    Mathematical representation:
+    y[n] = (1/N) Σ x[n-k]
     """)
 
 # ---------------- EXPERIMENT ----------------
-elif section == "Experiment":
-    st.header("🧪 Experiment: Low Pass Filter")
+with tab3:
+    st.subheader("Interactive Experiment")
 
-    st.subheader("Step 1: Generate Signal")
+    col1, col2 = st.columns(2)
 
-    freq = st.slider("Select Signal Frequency", 1, 50, 5)
-    noise_level = st.slider("Noise Level", 0.0, 1.0, 0.5)
+    with col1:
+        freq = st.slider("Frequency", 1, 50, 5)
+        noise = st.slider("Noise Level", 0.0, 1.0, 0.4)
+
+    with col2:
+        window = st.slider("Filter Window", 1, 50, 10)
 
     t = np.linspace(0, 1, 500)
     signal = np.sin(2 * np.pi * freq * t)
-    noise = noise_level * np.random.randn(len(t))
-    noisy_signal = signal + noise
-
-    st.subheader("Step 2: Apply Filter")
-
-    window_size = st.slider("Filter Window Size", 1, 50, 10)
-    filtered_signal = np.convolve(noisy_signal, np.ones(window_size)/window_size, mode='same')
-
-    st.subheader("Step 3: Visualization")
+    noisy = signal + noise * np.random.randn(len(t))
+    filtered = np.convolve(noisy, np.ones(window)/window, mode='same')
 
     fig, ax = plt.subplots()
-    ax.plot(t, noisy_signal, label="Noisy Signal")
-    ax.plot(t, filtered_signal, label="Filtered Signal", linewidth=2)
+    ax.plot(t, noisy, label="Noisy Signal")
+    ax.plot(t, filtered, label="Filtered Signal", linewidth=2)
     ax.legend()
-    ax.set_title("Signal vs Filtered Output")
 
     st.pyplot(fig)
 
-    st.success("Observation: Filter reduces noise and smooths the signal.")
+# ---------------- DYNAMIC QUIZ ----------------
+with tab4:
+    st.subheader("Dynamic Quiz")
 
-# ---------------- QUIZ ----------------
-elif section == "Quiz":
-    st.header("🧠 Quiz")
+    questions = [
+        ("What does LPF allow?", ["High freq", "Low freq", "Noise"], "Low freq"),
+        ("Filtering method used?", ["Convolution", "Integration", "FFT"], "Convolution"),
+        ("Noise effect?", ["Improves signal", "Distorts signal", "No effect"], "Distorts signal"),
+        ("Window size increase?", ["More smoothing", "More noise", "No change"], "More smoothing"),
+    ]
 
-    score = 0
+    selected = random.sample(questions, 3)
 
-    q1 = st.radio("1. What does a low-pass filter do?",
-                  ["Blocks low frequency", "Allows low frequency", "Amplifies noise"])
-
-    q2 = st.radio("2. Which method is used in this experiment?",
-                  ["Differentiation", "Convolution", "Integration"])
-
-    q3 = st.radio("3. Increasing window size will:",
-                  ["Increase noise", "Smooth more", "Remove signal"])
+    answers = []
+    for i, q in enumerate(selected):
+        ans = st.radio(q[0], q[1], key=i)
+        answers.append((ans, q[2]))
 
     if st.button("Submit Quiz"):
-        if q1 == "Allows low frequency":
-            score += 1
-        if q2 == "Convolution":
-            score += 1
-        if q3 == "Smooth more":
-            score += 1
+        score = sum([1 for a, c in answers if a == c])
+        st.success(f"Score: {score}/3")
 
-        st.write(f"✅ Your Score: {score}/3")
+# ---------------- PDF REPORT ----------------
+with tab5:
+    st.subheader("Download Report")
 
-        if score == 3:
-            st.success("Excellent!")
-        elif score == 2:
-            st.info("Good job!")
-        else:
-            st.warning("Keep practicing!")
+    if st.button("Generate PDF"):
+        doc = SimpleDocTemplate("report.pdf")
+        styles = getSampleStyleSheet()
 
-# ---------------- FEEDBACK ----------------
-elif section == "Feedback":
-    st.header("📝 Feedback")
+        content = []
+        content.append(Paragraph("Signal Processing Lab Report", styles["Title"]))
+        content.append(Spacer(1, 10))
 
-    name = st.text_input("Your Name")
-    rating = st.slider("Rate this lab", 1, 5, 3)
-    comments = st.text_area("Your Feedback")
+        content.append(Paragraph("Aim: Analyze signal filtering.", styles["Normal"]))
+        content.append(Spacer(1, 10))
 
-    if st.button("Submit Feedback"):
-        data = {
-            "Name": name,
-            "Rating": rating,
-            "Comments": comments,
-            "Time": datetime.datetime.now()
-        }
+        content.append(Paragraph("Theory: LPF reduces noise.", styles["Normal"]))
+        content.append(Spacer(1, 10))
 
-        df = pd.DataFrame([data])
+        doc.build(content)
 
-        try:
-            df.to_csv("feedback.csv", mode='a', header=False, index=False)
-        except:
-            df.to_csv("feedback.csv", index=False)
-
-        st.success("✅ Feedback saved successfully!")
-
-# ---------------- FOOTER ----------------
-st.sidebar.info("Developed using Streamlit | Signal Processing Lab")
+        with open("report.pdf", "rb") as f:
+            st.download_button("📥 Download PDF", f, file_name="Signal_Report.pdf")
